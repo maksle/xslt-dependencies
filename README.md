@@ -8,7 +8,8 @@ XSLT 2.0. It also assumes that you have graphviz installed, which is readily
 available at http://www.graphviz.org. Recursive includes/imports generates an
 error and you can review the dot file to see what happened.
 
-Put xslt-dep.el in your load path and keep xslt-dep.sh in the same folder.
+Put xslt-dep.el in your load path and keep xslt-dep.sh in the same folder. 
+Assuming you use nxml-mode for editing xsl:
 
 ```emacs
 (add-hook 'nxml-mode-hook (lambda () 
