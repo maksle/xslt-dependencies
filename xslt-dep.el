@@ -35,6 +35,21 @@
 ;; Visit an .xsl file that imports/includes other files and try C-c C-s d. This
 ;; generates a graphviz .dot file at `xd/deps-dot-output'. The graphviz dot
 ;; executable executes the dot file and outputs the graph.
+;; 
+;; I was able to use this in a Windows cygwin environment by using something
+;; like this in the shell script:
+;; 
+;;   #!/bin/bash
+;;   
+;;   /cygdrive/c/location/of/dot.exe -Tpng $(cygpath -w $1) -o $(cygpath -w $2);
+;;   /cygdrive/c/location/of/Foxit\ Reader.exe $(cygpath -w $2);
+
+
+(defvar xd/deps-dot-shell-file (concat (file-name-directory (locate-library "xslt-dep")) "xslt-dep.sh")
+  "Location of shell file to run graphviz executable dot and
+  display the result. The default tries to get the source
+  location of this package and use the shell file there. It is
+  better to define your own that suits your needs.")
 
 (defvar xd/deps-dot-file "/tmp/xslt-deps.dot"
   "Temp dot file to write to.")
@@ -63,7 +78,10 @@
       (set-buffer (find-file-noselect file))
       (goto-char (point-min))
       (while (re-search-forward "<xsl:\\(include\\|import\\) href=\"\\(.*\\)\"" nil t)
-        (let ((dep (expand-file-name (match-string-no-properties 2))))
+        (let* ((match (match-string-no-properties 2))
+               (dep (if (fboundp 'cygwin-convert-file-name-from-windows)
+                       (cygwin-convert-file-name-from-windows match t)
+                     (expand-file-name match))))
           (if (file-readable-p dep)
               (setq deps (cons dep deps))
             (error "Error: %s referenced in %s is not real file or unreadable" dep file))))
@@ -107,7 +125,8 @@ the digraph block of FILE and its dependencies into dot file
 
 (defun xd/execute-dot-file ()
   "Executes dot file `xd/deps-dot-file'."
-  (call-process (concat (file-name-directory (locate-library "xslt-dep")) "xslt-dep.sh")
+  (message "calling %s" xd/deps-dot-shell-file)
+  (call-process xd/deps-dot-shell-file
                 nil 0 nil xd/deps-dot-file xd/deps-dot-output)
   (message "Viewing %s" xd/deps-dot-file))
 
